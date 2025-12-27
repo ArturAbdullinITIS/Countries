@@ -15,7 +15,6 @@ public class Country {
     private List<String> borders;
     private String cca3;
 
-    // геттеры и сеттеры
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 

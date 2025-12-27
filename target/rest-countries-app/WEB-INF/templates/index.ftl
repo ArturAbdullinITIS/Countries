@@ -13,6 +13,8 @@
         .flag { max-width: 200px; }
         .borders { margin-top: 10px; }
         .border-link { margin-right: 10px; }
+        .search-container { position: relative; display: inline-block; }
+        #country-search { min-width: 300px; }
         .autocomplete-suggestions {
             border: 1px solid #ccc;
             max-height: 200px;
@@ -20,6 +22,9 @@
             position: absolute;
             background: white;
             z-index: 1000;
+            width: 300px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: none;
         }
         .suggestion-item {
             padding: 8px;
@@ -49,8 +54,10 @@
 
         <!-- Поиск с автодополнением -->
         <label for="country-search">Поиск страны:</label>
-        <input type="text" id="country-search" placeholder="Начните вводить название...">
-        <div id="autocomplete-suggestions"></div>
+        <div class="search-container">
+            <input type="text" id="country-search" placeholder="Начните вводить название...">
+            <div id="autocomplete-suggestions" class="autocomplete-suggestions"></div>
+        </div>
 
         <!-- Выбор страны из списка -->
         <label for="country-select">Или выберите страну:</label>
@@ -67,26 +74,50 @@
 
 <script>
     $(document).ready(function() {
-        // Загрузка списка стран при загрузке страницы
-        $.get("?action=countries", function(data) {
-            $('#country-select').empty();
-            $('#country-select').append('<option value="">Выберите страну...</option>');
-            $.each(data.countries, function(index, country) {
-                $('#country-select').append('<option value="' + country + '">' + country + '</option>');
-            });
-        });
+        // Функция загрузки списка стран (с учетом региона)
+        function loadCountriesList(region) {
+            var url = '?action=countries';
+            if (region) {
+                url += '&region=' + encodeURIComponent(region);
+            }
 
-        // Фильтр по континентам
+            $.get(url, function(data) {
+                $('#country-select').empty();
+                $('#country-select').append('<option value="">Выберите страну...</option>');
+                $.each(data.countries, function(index, country) {
+                    $('#country-select').append('<option value="' + country + '">' + country + '</option>');
+                });
+            }).fail(function() {
+                console.error('Ошибка загрузки списка стран');
+            });
+        }
+
+        // Загрузка списка стран при загрузке страницы (с учетом выбранного региона)
+        var selectedRegion = $('#region-filter').val();
+        loadCountriesList(selectedRegion);
+
+        // Фильтр по континентам - обновляем список стран без перезагрузки страницы
         $('#region-filter').change(function() {
             var region = $(this).val();
-            window.location.href = region ? '?region=' + encodeURIComponent(region) : '.';
+            // Очищаем информацию о стране
+            $('#country-info').empty();
+            $('#country-search').val('');
+            $('#country-select').val('');
+            // Загружаем новый список стран
+            loadCountriesList(region);
         });
 
-        // Автодополнение
+        // Автодополнение (с учётом выбранного региона)
         $('#country-search').on('input', function() {
             var query = $(this).val();
             if (query.length >= 2) {
-                $.get('?action=autocomplete&query=' + encodeURIComponent(query), function(data) {
+                var region = $('#region-filter').val();
+                var url = '?action=autocomplete&query=' + encodeURIComponent(query);
+                if (region) {
+                    url += '&region=' + encodeURIComponent(region);
+                }
+
+                $.get(url, function(data) {
                     var suggestions = $('#autocomplete-suggestions');
                     suggestions.empty();
                     if (data.length > 0) {
@@ -100,6 +131,8 @@
                     } else {
                         suggestions.hide();
                     }
+                }).fail(function() {
+                    console.error('Ошибка автодополнения');
                 });
             } else {
                 $('#autocomplete-suggestions').hide();
@@ -112,6 +145,13 @@
             $('#country-search').val(countryName);
             $('#autocomplete-suggestions').hide();
             loadCountryInfo(countryName);
+        });
+
+        // Скрытие автодополнения при клике вне его области
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.search-container').length) {
+                $('#autocomplete-suggestions').hide();
+            }
         });
 
         // Выбор страны из dropdown

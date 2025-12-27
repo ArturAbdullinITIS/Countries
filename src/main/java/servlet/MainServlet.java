@@ -40,7 +40,6 @@ public class MainServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        String path = req.getServletPath();
         String action = req.getParameter("action");
 
         long startTime = System.currentTimeMillis();
@@ -103,7 +102,6 @@ public class MainServlet extends HttpServlet {
         }
 
         if (country != null) {
-            // Получаем информацию о граничащих странах
             if (country.getBorders() != null && !country.getBorders().isEmpty()) {
                 List<Country> borderCountries = new ArrayList<>();
                 for (String borderCode : country.getBorders()) {
@@ -128,12 +126,10 @@ public class MainServlet extends HttpServlet {
             data.put("timestamp", new Date());
 
             if ("XMLHttpRequest".equals(req.getHeader("X-Requested-With"))) {
-                // AJAX запрос
                 resp.setContentType("application/json");
                 resp.setCharacterEncoding("UTF-8");
                 objectMapper.writeValue(resp.getWriter(), country);
             } else {
-                // Обычный запрос
                 renderTemplate("country.ftl", data, resp);
             }
         } else {
@@ -145,7 +141,16 @@ public class MainServlet extends HttpServlet {
     private void handleGetCountries(HttpServletRequest req, HttpServletResponse resp)
             throws Exception {
 
-        List<Country> countries = countryService.getAllCountries();
+        String region = req.getParameter("region");
+        List<Country> countries;
+
+        if (region != null && !region.isEmpty()) {
+            countries = countryService.getCountriesByRegion(region);
+            logger.info("Получение стран для региона: {}", region);
+        } else {
+            countries = countryService.getAllCountries();
+            logger.info("Получение всех стран");
+        }
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
@@ -163,12 +168,32 @@ public class MainServlet extends HttpServlet {
             throws Exception {
 
         String query = req.getParameter("query");
+        String region = req.getParameter("region");
+
         if (query == null || query.length() < 2) {
+            resp.setContentType("application/json");
+            resp.setCharacterEncoding("UTF-8");
             resp.getWriter().write("[]");
             return;
         }
 
-        List<String> results = countryService.searchCountries(query);
+        List<Country> countries;
+        if (region != null && !region.isEmpty()) {
+            countries = countryService.getCountriesByRegion(region);
+        } else {
+            countries = countryService.getAllCountries();
+        }
+
+        List<String> results = new ArrayList<>();
+        String lowerQuery = query.toLowerCase();
+        for (Country country : countries) {
+            if (country.getName().toLowerCase().contains(lowerQuery)) {
+                results.add(country.getName());
+                if (results.size() >= 10) {
+                    break;
+                }
+            }
+        }
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");

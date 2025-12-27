@@ -79,7 +79,6 @@ public class CountryService {
             for (JsonNode node : root) {
                 Country country = new Country();
 
-                // Обработка названий
                 JsonNode nameNode = node.get("name");
                 if (nameNode != null) {
                     country.setName(nameNode.get("common").asText());
@@ -95,7 +94,6 @@ public class CountryService {
                 country.setArea(node.has("area") ?
                         node.get("area").asDouble() : 0.0);
 
-                // Языки
                 if (node.has("languages")) {
                     List<String> languages = new ArrayList<>();
                     node.get("languages").fields().forEachRemaining(entry -> {
@@ -104,7 +102,6 @@ public class CountryService {
                     country.setLanguages(languages);
                 }
 
-                // Валюты
                 if (node.has("currencies")) {
                     List<String> currencies = new ArrayList<>();
                     node.get("currencies").fields().forEachRemaining(entry -> {
@@ -114,7 +111,6 @@ public class CountryService {
                     country.setCurrencies(currencies);
                 }
 
-                // Часовые пояса
                 if (node.has("timezones")) {
                     List<String> timezones = new ArrayList<>();
                     node.get("timezones").forEach(tz -> {
@@ -123,16 +119,13 @@ public class CountryService {
                     country.setTimezones(timezones);
                 }
 
-                // Флаг
                 if (node.has("flags")) {
                     country.setFlagUrl(node.get("flags").get("png").asText());
                 }
 
-                // Регион
                 country.setRegion(node.has("region") ?
                         node.get("region").asText() : "N/A");
 
-                // Граничащие страны
                 if (node.has("borders")) {
                     List<String> borders = new ArrayList<>();
                     node.get("borders").forEach(border -> {
@@ -141,7 +134,6 @@ public class CountryService {
                     country.setBorders(borders);
                 }
 
-                // Код страны
                 country.setCca3(node.has("cca3") ?
                         node.get("cca3").asText() : "");
 

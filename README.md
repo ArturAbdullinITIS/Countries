@@ -1,1 +1,1 @@
-Screencast link: https://disk.yandex.ru/i/IJXg213IAZH8Aw
+Screencast link: https://disk.yandex.ru/i/_tXyrb067Se_lQ
